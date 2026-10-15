@@ -16,12 +16,41 @@
     }
     void App::loop()
     {
+        Uint64 fps = 0; // frames per second
+        double target = 1000.0 / 60; // target is 60 fps
+        Uint64 lastTime = 0;
+
         // main loop
         while (running)
         {
+            Uint64 currentTick = SDL_GetTicks();
             Input();
             Update();
             Render();
+            Uint64 end = SDL_GetTicks();
+
+
+            double frameTime = (end - currentTick) * 1000.0 / SDL_GetPerformanceFrequency();
+            double delay = target - frameTime;
+
+            if (delay > 0.0)
+            {
+                SDL_Delay((int)delay);
+                frameTime += delay;
+            }
+
+            fps = 1000.0 / frameTime;
+
+            if (currentTick > lastTime + 1000)
+            {
+                
+                lastTime = currentTick;
+                std::string title;
+                title += "My Program - FPS: " + std::to_string(fps);
+                SDL_SetWindowTitle(window, title.c_str());
+                fps = 0;
+            }
+
         }
     }
 

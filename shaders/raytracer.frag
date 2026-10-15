@@ -14,7 +14,7 @@ const vec4 colors[4] = vec4[4](
     vec4(152.0, 60.0, 20.0, 16.0)    // x >= 0.9
 );
 
-const float thresholds[4] = float[4](0.5, 0.7, 0.8, 0.9);
+const float thresholds[4] = float[4](0.2, 0.7, 0.8, 0.9);
 
 void main()
 {
