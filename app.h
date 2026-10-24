@@ -1,6 +1,8 @@
 #pragma once
 #include <SDL3/SDL.h>
 #include <string>
+#include <vector>
+#include "mesh.h"
 
 class App
 {
@@ -9,12 +11,12 @@ class App
         const int SCREEN_HEIGHT = 600;
         SDL_Window *window;
         SDL_GLContext ctx;
-        GLuint shaderProgram;
 
     public:
         App();
         bool running; // tells if prog is running
-        GLuint VAO;
+        std::vector<Mesh> mesh;
+        GLuint shaderProgram;
 
         int initProgram();
         void closeApp();

@@ -6,86 +6,50 @@
 #include "app.h"
 #include "utils/math.h"
 
-uint8_t* perlinPipeLine();
+uint8_t* perlinPipeLine(float divisor, int octaves, float offset);
 
-int main(int arc, char *argv[])
+int main(int argc, char *argv[])
 {
     App mApp = App();
 
     if (mApp.initProgram() != 0)
     {
         std::cout << "Could not init program." << std::endl;
+        return 1;
     }
-
-    // temp quad data
-    float vertices[] = {
-        // positions          // colors           // texture coords
-        0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
-        0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
-        -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
-        -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
-    };
-    unsigned int indices[] = {
-        0, 1, 3,
-        1, 2, 3
-    };
-
-    // tex coords
-    float texCoords[] =
+    else if (argc < 2)
     {
-        0.0f, 0.0f,  // lower-left corner  
-        1.0f, 0.0f,  // lower-right corner
-        0.5f, 1.0f   // top-center corner
-    };
-
-    // set up simple VAO
-    glGenVertexArrays(1, &mApp.VAO);
-    glBindVertexArray(mApp.VAO);
-
-    GLuint VBO = 0;
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    GLuint EBO = 0;
-    glGenBuffers(1, &EBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    // position
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    // color
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    // existing texture coords
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-    glEnableVertexAttribArray(2);
+        std::cout << "Please provide a .obj file as an argument." << std::endl;
+        return 1;
+    }
 
     GLuint shaderProgram = mApp.makeShaderProgram();
     if (!shaderProgram)
     {
         return 1;
     }
+    mApp.shaderProgram = shaderProgram;
     glUseProgram(shaderProgram);
+    mApp.mesh.push_back(Mesh(argv[1], shaderProgram));
 
-    uint8_t* pixels = perlinPipeLine();
+    uint8_t* large = perlinPipeLine(450, 1, 0.0f);
+    uint8_t* medium = perlinPipeLine(150, 3, 0.0f);
+    uint8_t* small = perlinPipeLine(60, 3, 0.0f);
 
-    // set up texture
-    unsigned int texture;
-    glGenTextures(1, &texture);
-
-    // bind and fill tex
-    glBindTexture(GL_TEXTURE_2D, texture); 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 800, 600, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    // make the new texture
+    uint8_t* combined = new uint8_t[800 * 600 * 4];
+    for (int i = 0; i < 800 * 600; i++)
+    {
+        combined[i * 4 + 0] = large[i * 4];
+        combined[i * 4 + 1] = medium[i * 4];
+        combined[i * 4 + 2] = small[i * 4];
+        combined[i * 4 + 3] = 255;
+    }
+    mApp.mesh[0].assignTex(combined, 800, 600);
 
     mApp.loop();
 
     glDeleteProgram(shaderProgram);
-    glDeleteVertexArrays(1, &mApp.VAO);
     mApp.closeApp();
     return EXIT_SUCCESS;
 }
@@ -157,14 +121,10 @@ float perlin(float x, float y)
     return value;
 }
 
-uint8_t* perlinPipeLine()
+uint8_t* perlinPipeLine(float divisor, int octaves, float offset)
 {
     // generate a 2D grid of perlin noise values
     uint8_t* pixels = new uint8_t[800 * 600 * 4];
-    int gridSize = 400;
-    auto* grid = new float[gridSize * gridSize];
-
-
 
     for (int x = 0; x < 800; x++)
     {
@@ -176,9 +136,9 @@ uint8_t* perlinPipeLine()
             float freq = 1.0;
             float amp = 1.0;
 
-            for (int i = 0; i < 12; i++)
+            for (int i = 0; i < octaves; i++)
             {
-                val += perlin(x * freq / 256, y * freq / 256) * amp;
+                val += perlin(x * freq / divisor + offset, y * freq / divisor + offset) * amp;
                 freq *= 2.0;
                 amp *= 0.5;
             }

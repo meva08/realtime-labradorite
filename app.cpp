@@ -12,7 +12,6 @@
         window = nullptr;
         ctx = nullptr;
         shaderProgram = 0;
-        VAO = 0;
     }
     void App::loop()
     {
@@ -133,8 +132,10 @@
         glClearColor(0.1f, 0.2f, 0.4f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        for (auto& m : mesh)
+        {
+            m.render(shaderProgram);
+        }
 
         SDL_GL_SwapWindow(window);
     }
