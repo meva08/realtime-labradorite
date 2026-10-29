@@ -6,6 +6,7 @@
 #include "app.h"
 #include "utils/math.h"
 
+
 uint8_t* perlinPipeLine(float divisor, int octaves, float offset);
 
 int main(int argc, char *argv[])
@@ -32,7 +33,24 @@ int main(int argc, char *argv[])
     glUseProgram(shaderProgram);
     mApp.mesh.push_back(Mesh(argv[1], shaderProgram));
 
-    uint8_t* large = perlinPipeLine(450, 1, 0.0f);
+    // set up MVP matrices
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f)); 
+
+    glm::mat4 view = glm::mat4(1.0f);
+    view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+
+    glm::mat4 projection;
+    projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+
+    // send once for fixed camera
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+    glEnable(GL_DEPTH_TEST);
+
+    uint8_t* large = perlinPipeLine(350, 1, 0.0f);
     uint8_t* medium = perlinPipeLine(150, 3, 0.0f);
     uint8_t* small = perlinPipeLine(60, 3, 0.0f);
 
